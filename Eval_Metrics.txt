@@ -1,0 +1,27 @@
+Linear Regression Performance:
+  Mean Absolute Error: 1.628
+  Mean Squared Error:  4.857
+  R^2 Score:           0.509
+----------------------------------------
+Optimizing XGBoost Regressor...
+Best parameters found: {'learning_rate': 0.05, 'max_depth': 3, 'n_estimators': 250}
+Best CV MSE: 4.630767114829843
+XGBoost Regressor (Optimized) Performance:
+  Mean Absolute Error: 1.561
+  Mean Squared Error:  4.710
+  R^2 Score:           0.524
+----------------------------------------
+Optimizing MLP Regressor...
+Best parameters found: {'activation': 'tanh', 'hidden_layer_sizes': (50, 50), 'learning_rate_init': 0.005, 'solver': 'adam'}
+Best CV MSE: 4.488697501844784
+MLP Regressor (Optimized) Performance:
+  Mean Absolute Error: 1.486
+  Mean Squared Error:  4.315
+  R^2 Score:           0.564
+----------------------------------------
+
+Summary of Model Performance:
+               Model       MAE       MSE        R2
+0  Linear Regression  1.627995  4.856652  0.509159
+1            XGBoost  1.560596  4.709860  0.523994
+2                MLP  1.486095  4.314948  0.563907
