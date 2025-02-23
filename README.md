@@ -4,28 +4,134 @@ This project focuses on predicting the age of abalones using various machine lea
 ---
 
 ## 2. Data Overview and Preprocessing
-1. **Dataset**:  
-   - Features: `Sex` (categorical), `Length`, `Diameter`, `Height`, `Whole Weight`, `Shucked Weight`, `Viscera Weight`, `Shell Weight`, and `Rings` (the original age indicator).  
-   - Target (`Age`): Defined as `Rings + 1.5`.
 
-2. **Label Encoding**: The `Sex` column is transformed into numerical values using `LabelEncoder`.
+### 2.1 Dataset
+- Features: `Sex` (categorical), `Length`, `Diameter`, `Height`, `Whole Weight`, `Shucked Weight`, `Viscera Weight`, `Shell Weight`, and `Rings` (original age indicator).
+- Target (`Age`): Defined as `Rings + 1.5`.
 
-3. **Scaling & Splitting**:
-   - We apply `StandardScaler` to the feature matrix to ensure that all features contribute on a similar scale.
-   - We split the data into training and testing sets with a 60/40 ratio.
+### 2.2 Data Preprocessing
+We first load the dataset and transform categorical features using label encoding. Then, we standardize the numerical features to ensure equal contribution to the model.
+
+```python
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+df = pd.read_csv('abalone.csv')
+
+# Define target variable
+df['Age'] = df['Rings'] + 1.5
+
+# Encode categorical variable
+le = LabelEncoder()
+df['Sex'] = le.fit_transform(df['Sex'])
+
+# Separate features and target
+X = df.drop(['Age', 'Rings'], axis=1)
+y = df['Age']
+
+# Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.4, random_state=42)
+```
 
 ---
 
 ## 3. Model Implementations
 
 ### 3.1 Linear Regression (Baseline)
-A **Linear Regression** model is used as a baseline. It provides a quick view of how a simple linear model predicts abalone age.
+A **Linear Regression** model serves as the baseline for comparison.
+
+```python
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Initialize and train the model
+lin_reg = LinearRegression()
+lin_reg.fit(X_train, y_train)
+
+# Make predictions
+y_pred = lin_reg.predict(X_test)
+
+# Evaluate performance
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Linear Regression - MAE: {mae:.3f}, MSE: {mse:.3f}, R^2: {r2:.3f}")
+```
+
+---
 
 ### 3.2 XGBoost Regressor
-**XGBoost** is a gradient boosting framework known for strong performance. We use `GridSearchCV` over a range of hyperparameters (learning rate, max depth, number of estimators) to select the best configuration.
+**XGBoost** is a gradient boosting method optimized for structured data. We tune hyperparameters using `GridSearchCV`.
+
+```python
+from xgboost import XGBRegressor
+from sklearn.model_selection import GridSearchCV
+
+# Define model
+xgb = XGBRegressor(objective='reg:squarederror', random_state=42)
+
+# Hyperparameter tuning grid
+param_grid = {
+    'n_estimators': [50, 100, 150],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.01, 0.05, 0.1]
+}
+
+# Grid search optimization
+grid_search = GridSearchCV(xgb, param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+
+# Best model
+best_xgb = grid_search.best_estimator_
+
+# Evaluate
+y_pred_xgb = best_xgb.predict(X_test)
+mae_xgb = mean_absolute_error(y_test, y_pred_xgb)
+mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+r2_xgb = r2_score(y_test, y_pred_xgb)
+print(f"XGBoost - MAE: {mae_xgb:.3f}, MSE: {mse_xgb:.3f}, R^2: {r2_xgb:.3f}")
+```
+
+---
 
 ### 3.3 MLP Regressor (Neural Network)
-We also test a **Multilayer Perceptron (MLP)** Regressor with multiple hidden layer configurations, activation functions, and learning rates. A grid search is employed to identify the best settings, optimizing for the lowest mean squared error (MSE).
+We implement a **Multilayer Perceptron (MLP)** Regressor with a grid search over hyperparameters.
+
+```python
+from sklearn.neural_network import MLPRegressor
+
+# Define MLP model
+mlp = MLPRegressor(max_iter=500, random_state=42, early_stopping=True)
+
+# Hyperparameter tuning grid
+mlp_param_grid = {
+    'hidden_layer_sizes': [(50,), (100,), (50,50)],
+    'activation': ['relu', 'tanh'],
+    'solver': ['adam', 'sgd'],
+    'learning_rate_init': [0.001, 0.005, 0.01]
+}
+
+# Grid search
+grid_search_mlp = GridSearchCV(mlp, mlp_param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search_mlp.fit(X_train, y_train)
+
+# Best model
+best_mlp = grid_search_mlp.best_estimator_
+
+# Evaluate
+y_pred_mlp = best_mlp.predict(X_test)
+mae_mlp = mean_absolute_error(y_test, y_pred_mlp)
+mse_mlp = mean_squared_error(y_test, y_pred_mlp)
+r2_mlp = r2_score(y_test, y_pred_mlp)
+print(f"MLP Regressor - MAE: {mae_mlp:.3f}, MSE: {mse_mlp:.3f}, R^2: {r2_mlp:.3f}")
+```
 
 ---
 
